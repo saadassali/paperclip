@@ -1,40 +1,18 @@
 services:
-  db:
-    image: postgres:17-alpine
-    environment:
-      POSTGRES_USER: "${POSTGRES_USER}"
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-      POSTGRES_DB: "${POSTGRES_DB}"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U paperclip -d paperclip"]
-      interval: 2s
-      timeout: 5s
-      retries: 30
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-  server:
+  paperclip:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     ports:
-      - "3100:3100"
+      - "${PAPERCLIP_PORT:-3100}:3100"
     environment:
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${PAPERCLIP_POSTGRES_DB_URL}:5432/${POSTGRES_DB}"
-      PORT: "3100"
-      SERVE_UI: "true"
+      HOST: "0.0.0.0"
+      PAPERCLIP_HOME: "/paperclip"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
       PAPERCLIP_DEPLOYMENT_MODE: "authenticated"
       PAPERCLIP_DEPLOYMENT_EXPOSURE: "private"
       PAPERCLIP_PUBLIC_URL: "${PAPERCLIP_PUBLIC_URL:-http://localhost:3100}"
       BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}"
     volumes:
-      - paperclip-data:/paperclip
-    depends_on:
-      db:
-        condition: service_healthy
-
-volumes:
-  pgdata:
-  paperclip-data:
+      - "${PAPERCLIP_DATA_DIR:-../data/docker-paperclip}:/paperclip"
